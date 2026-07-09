@@ -72,6 +72,7 @@
   .a-wrap::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:2px;border-radius:2px;
     background:linear-gradient(var(--violet),var(--magenta),var(--amber))}
   .a-text{font-size:16px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word;color:#DEDCEC}
+  .a-text.err{color:#FFA9A0}
   .shimmer{display:inline-flex;gap:6px;align-items:center;height:24px}
   .shimmer i{width:7px;height:7px;border-radius:50%;background:var(--violet);opacity:.5;animation:pulse 1s infinite}
   .shimmer i:nth-child(2){background:var(--magenta);animation-delay:.15s}
@@ -177,7 +178,9 @@
       presence=document.getElementById('presence'),statusText=document.getElementById('statusText');
 
   var CODE=sessionStorage.getItem('lewo_code')||'';
-  var history=[];
+  // Belangrijk: deze variabele heet 'convo', NIET 'history'.
+  // 'history' botst met een naam die de browser zelf gebruikt, waardoor de pagina crasht.
+  var convo=[];
 
   function setBusy(on){
     orb.classList.toggle('busy',on);
@@ -219,7 +222,7 @@
   input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
   newbtn.addEventListener('click',function(){
-    history=[];canvas.innerHTML='';
+    convo=[];canvas.innerHTML='';
     intro=document.createElement('div');intro.className='intro';
     intro.innerHTML='Nieuw gesprek. Waarmee kan ik je helpen?';
     canvas.appendChild(intro);input.focus();
@@ -228,19 +231,29 @@
   form.addEventListener('submit',async function(e){
     e.preventDefault();var text=input.value.trim();if(!text)return;
     var target=addEntry(text);
-    history.push({role:'user',content:text});
+    convo.push({role:'user',content:text});
     input.value='';input.style.height='auto';setBusy(true);
 
     try{
       var r=await fetch('/api/chat',{method:'POST',
         headers:{'content-type':'application/json','x-lewo-code':CODE},
-        body:JSON.stringify({messages:history})});
+        body:JSON.stringify({messages:convo})});
       if(r.status===401){setBusy(false);sessionStorage.removeItem('lewo_code');
         gate.classList.remove('hide');gateErr.textContent='Je toegang is verlopen. Vul opnieuw een code in.';return;}
       var data=await r.json();setBusy(false);
-      if(data.reply){target.textContent=data.reply;history.push({role:'assistant',content:data.reply});}
-      else{target.textContent='Sorry, er ging iets mis. Probeer het straks opnieuw.';}
-    }catch(err){setBusy(false);target.textContent='Ik kan Lewo even niet bereiken. Probeer het later opnieuw.';}
+      if(data && data.reply){
+        target.textContent=data.reply;
+        convo.push({role:'assistant',content:data.reply});
+      } else {
+        // Toon de echte serverfout in beeld, zodat we niet meer hoeven te gissen.
+        target.classList.add('err');
+        target.textContent='Fout van de server: '+((data&&data.error)?data.error:('onbekend (status '+r.status+')'));
+      }
+    }catch(err){
+      setBusy(false);
+      target.classList.add('err');
+      target.textContent='Verbindingsfout: '+(err&&err.message?err.message:err);
+    }
     finally{canvas.scrollTop=canvas.scrollHeight;input.focus();}
   });
 </script>
