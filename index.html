@@ -18,7 +18,6 @@
   html,body{height:100%}
   body{margin:0;background:var(--bg);color:var(--ink);font-family:"Inter",system-ui,sans-serif;
     overflow:hidden;-webkit-font-smoothing:antialiased}
-  /* ambient aurora background */
   body::before{content:"";position:fixed;inset:0;z-index:0;pointer-events:none;
     background:
       radial-gradient(60% 45% at 78% 8%,rgba(122,92,255,.18),transparent 60%),
@@ -68,11 +67,23 @@
   .tag.you{color:var(--amber)}
   .tag.lewo{color:var(--violet)}
   .q-text{font-size:17px;line-height:1.5;color:var(--ink);font-weight:500;margin-bottom:22px}
+  .q-files{display:flex;flex-wrap:wrap;gap:7px;margin:-12px 0 22px}
+  .q-files .qf{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;color:var(--muted);
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:5px 10px}
+  .q-files .qf svg{width:13px;height:13px;opacity:.8}
   .a-wrap{position:relative;padding-left:20px}
   .a-wrap::before{content:"";position:absolute;left:0;top:2px;bottom:2px;width:2px;border-radius:2px;
     background:linear-gradient(var(--violet),var(--magenta),var(--amber))}
   .a-text{font-size:16px;line-height:1.72;white-space:pre-wrap;word-wrap:break-word;color:#DEDCEC}
   .a-text.err{color:#FFA9A0}
+
+  .sources{margin-top:16px;padding-top:13px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:7px}
+  .sources .sh{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+  .sources a{display:inline-flex;align-items:baseline;gap:8px;color:#BFC0E8;text-decoration:none;font-size:14px;line-height:1.4;max-width:100%;transition:color .15s}
+  .sources a:hover{color:#fff}
+  .sources a .n{font-family:"IBM Plex Mono",monospace;font-size:11px;color:var(--violet);flex:0 0 auto}
+  .sources a .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-decoration:underline;text-underline-offset:3px;text-decoration-color:rgba(191,192,232,.3)}
+
   .shimmer{display:inline-flex;gap:6px;align-items:center;height:24px}
   .shimmer i{width:7px;height:7px;border-radius:50%;background:var(--violet);opacity:.5;animation:pulse 1s infinite}
   .shimmer i:nth-child(2){background:var(--magenta);animation-delay:.15s}
@@ -84,16 +95,29 @@
   .bar-wrap{position:relative;padding:14px 0 26px}
   .bar-wrap::before{content:"";position:absolute;left:0;right:0;top:-40px;height:40px;
     background:linear-gradient(transparent,var(--bg));pointer-events:none}
-  .bar{display:flex;align-items:flex-end;gap:10px;background:var(--bg-2);border:1px solid var(--line);
-    border-radius:20px;padding:8px 8px 8px 18px;box-shadow:0 20px 50px -30px #000,0 0 0 1px rgba(122,92,255,.06)}
+
+  /* bijlage-chips boven de balk */
+  .attachments{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+  .attachments:empty{display:none}
+  .chip{display:inline-flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line);
+    border-radius:11px;padding:7px 9px 7px 11px;font-size:13px;color:var(--ink);max-width:230px}
+  .chip .ico{width:15px;height:15px;flex:0 0 auto;color:var(--violet)}
+  .chip .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .chip .x{flex:0 0 auto;cursor:pointer;color:var(--muted);border:0;background:transparent;font-size:16px;line-height:1;padding:0 2px}
+  .chip .x:hover{color:#fff}
+
+  .bar{display:flex;align-items:flex-end;gap:8px;background:var(--bg-2);border:1px solid var(--line);
+    border-radius:20px;padding:8px 8px 8px 10px;box-shadow:0 20px 50px -30px #000,0 0 0 1px rgba(122,92,255,.06)}
   .bar:focus-within{border-color:rgba(122,92,255,.45);box-shadow:0 0 0 3px rgba(122,92,255,.14)}
-  .caret{font-family:"IBM Plex Mono",monospace;color:var(--violet);font-size:20px;line-height:44px;flex:0 0 auto;user-select:none}
+  .clip{flex:0 0 auto;width:40px;height:44px;border:0;background:transparent;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;border-radius:12px;transition:color .15s,background .15s}
+  .clip:hover{color:var(--ink);background:rgba(255,255,255,.05)}
+  .clip svg{width:20px;height:20px}
   .bar textarea{flex:1;background:transparent;border:0;color:var(--ink);font-family:"Inter";font-size:16px;
     resize:none;max-height:150px;line-height:1.5;padding:12px 0;outline:none}
   .bar textarea::placeholder{color:var(--muted)}
   .go{flex:0 0 auto;width:44px;height:44px;border:0;border-radius:14px;cursor:pointer;color:#1a1206;
-    background:linear-gradient(135deg,var(--amber),#e79a3f);display:flex;align-items:center;justify-content:center;
-    transition:transform .15s,filter .2s}
+    background:linear-gradient(135deg,var(--amber),#e79a3f);display:flex;align-items:center;justify-content:center;transition:transform .15s,filter .2s}
   .go:hover{filter:brightness(1.08)}.go:active{transform:scale(.93)}
   .go:disabled{opacity:.45;cursor:not-allowed}
   .foot{text-align:center;font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.08em;color:var(--muted);opacity:.7;margin-top:12px}
@@ -154,12 +178,16 @@
     </div>
 
     <div class="canvas" id="canvas">
-      <div class="intro" id="intro">Ik ben <b>Lewo</b>. Stel me een vraag, vraag me iets te schrijven, uit te leggen of te bedenken — typ hieronder.</div>
+      <div class="intro" id="intro">Ik ben <b>Lewo</b>. Stel me een vraag, stuur een foto of PDF mee, of vraag me iets uit te leggen of te bedenken — typ hieronder.</div>
     </div>
 
     <div class="bar-wrap">
+      <div class="attachments" id="attachments"></div>
       <form class="bar" id="form">
-        <span class="caret">&rsaquo;</span>
+        <button type="button" class="clip" id="clip" aria-label="Bestand toevoegen" title="Foto of PDF toevoegen">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
+        </button>
+        <input type="file" id="fileInput" accept="image/*,application/pdf" multiple hidden>
         <textarea id="input" rows="1" placeholder="Vraag Lewo iets..."></textarea>
         <button class="go" id="send" type="submit" aria-label="Versturen">
           <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
@@ -175,33 +203,127 @@
       canvas=document.getElementById('canvas'),intro=document.getElementById('intro'),
       form=document.getElementById('form'),input=document.getElementById('input'),send=document.getElementById('send'),
       newbtn=document.getElementById('newbtn'),orb=document.getElementById('orb'),
-      presence=document.getElementById('presence'),statusText=document.getElementById('statusText');
+      presence=document.getElementById('presence'),statusText=document.getElementById('statusText'),
+      clip=document.getElementById('clip'),fileInput=document.getElementById('fileInput'),attachments=document.getElementById('attachments');
 
   var CODE=sessionStorage.getItem('lewo_code')||'';
-  // Belangrijk: deze variabele heet 'convo', NIET 'history'.
-  // 'history' botst met een naam die de browser zelf gebruikt, waardoor de pagina crasht.
-  var convo=[];
+  var convo=[];        // gespreksgeschiedenis
+  var pending=[];      // nog te versturen bijlagen
 
   function setBusy(on){
     orb.classList.toggle('busy',on);
     presence.classList.toggle('busy',on);
     statusText.textContent=on?'denkt na':'klaar';
-    send.disabled=on;
+    send.disabled=on;clip.disabled=on;
   }
 
-  function addEntry(question){
+  /* ---------- bijlagen inlezen ---------- */
+  // Foto's verkleinen we zodat het snel en goedkoop blijft.
+  function readImage(file){
+    return new Promise(function(resolve,reject){
+      var img=new Image();var url=URL.createObjectURL(file);
+      img.onload=function(){
+        var max=1568,w=img.width,h=img.height;
+        if(w>max||h>max){ if(w>h){h=Math.round(h*max/w);w=max;} else {w=Math.round(w*max/h);h=max;} }
+        var c=document.createElement('canvas');c.width=w;c.height=h;
+        c.getContext('2d').drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        try{
+          var dataUrl=c.toDataURL('image/jpeg',0.85);
+          resolve({kind:'image',media_type:'image/jpeg',data:dataUrl.split(',')[1],name:file.name});
+        }catch(e){reject(e);}
+      };
+      img.onerror=function(){URL.revokeObjectURL(url);reject(new Error('afbeelding onleesbaar'));};
+      img.src=url;
+    });
+  }
+  function readBase64(file){
+    return new Promise(function(resolve,reject){
+      var r=new FileReader();
+      r.onload=function(){resolve(String(r.result).split(',')[1]);};
+      r.onerror=function(){reject(new Error('bestand onleesbaar'));};
+      r.readAsDataURL(file);
+    });
+  }
+
+  function iconSvg(kind){
+    if(kind==='document') return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>';
+    return '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="M21 15l-5-5L5 21"/></svg>';
+  }
+
+  function renderChips(){
+    attachments.innerHTML='';
+    pending.forEach(function(p,idx){
+      var chip=document.createElement('div');chip.className='chip';
+      chip.innerHTML=iconSvg(p.kind)+'<span class="nm">'+p.name.replace(/</g,'&lt;')+'</span>';
+      var x=document.createElement('button');x.className='x';x.type='button';x.textContent='×';
+      x.addEventListener('click',function(){pending.splice(idx,1);renderChips();});
+      chip.appendChild(x);
+      attachments.appendChild(chip);
+    });
+  }
+
+  clip.addEventListener('click',function(){fileInput.click();});
+  fileInput.addEventListener('change',async function(){
+    var files=Array.prototype.slice.call(fileInput.files||[]);
+    for(var i=0;i<files.length;i++){
+      var f=files[i];
+      try{
+        if(f.type && f.type.indexOf('image/')===0){
+          pending.push(await readImage(f));
+        }else if(f.type==='application/pdf'){
+          if(f.size>4.2*1024*1024){ alert('Deze PDF is te groot (max ongeveer 4 MB): '+f.name); continue; }
+          pending.push({kind:'document',media_type:'application/pdf',data:await readBase64(f),name:f.name});
+        }else{
+          alert('Alleen foto\u2019s en PDF-bestanden kunnen mee: '+f.name);
+        }
+      }catch(e){ alert('Kon dit bestand niet lezen: '+f.name); }
+    }
+    fileInput.value='';
+    renderChips();
+    input.focus();
+  });
+
+  /* ---------- gesprek tonen ---------- */
+  function addEntry(question, files){
     if(intro) {intro.remove();intro=null;}
     var e=document.createElement('div');e.className='entry';
     e.innerHTML='<div class="tag you">&rsaquo; jij</div>'+
                 '<div class="q-text"></div>'+
+                '<div class="q-files"></div>'+
                 '<div class="tag lewo">&#9679; lewo</div>'+
                 '<div class="a-wrap"><div class="a-text"><span class="shimmer"><i></i><i></i><i></i></span></div></div>';
-    e.querySelector('.q-text').textContent=question;
+    e.querySelector('.q-text').textContent=question||'';
+    if(!question) e.querySelector('.q-text').style.display='none';
+    var fbox=e.querySelector('.q-files');
+    if(files && files.length){
+      files.forEach(function(p){
+        var qf=document.createElement('span');qf.className='qf';
+        qf.innerHTML=iconSvg(p.kind).replace('ico','')+'<span>'+p.name.replace(/</g,'&lt;')+'</span>';
+        fbox.appendChild(qf);
+      });
+    }else{ fbox.style.display='none'; }
     canvas.appendChild(e);
     canvas.scrollTop=canvas.scrollHeight;
     return e.querySelector('.a-text');
   }
 
+  function addSources(target, sources){
+    if(!sources || !sources.length) return;
+    var wrap=target.parentNode;
+    var box=document.createElement('div');box.className='sources';
+    var h=document.createElement('div');h.className='sh';h.textContent='Bronnen';box.appendChild(h);
+    sources.forEach(function(s,i){
+      if(!s || !s.url) return;
+      var a=document.createElement('a');a.href=s.url;a.target='_blank';a.rel='noopener noreferrer';
+      var n=document.createElement('span');n.className='n';n.textContent=(i+1)+'.';
+      var t=document.createElement('span');t.className='t';t.textContent=s.title||s.url;
+      a.appendChild(n);a.appendChild(t);box.appendChild(a);
+    });
+    wrap.appendChild(box);
+  }
+
+  /* ---------- toegang ---------- */
   async function verify(code){
     try{var r=await fetch('/api/chat',{method:'POST',
       headers:{'content-type':'application/json','x-lewo-code':code},
@@ -222,17 +344,38 @@
   input.addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit();}});
 
   newbtn.addEventListener('click',function(){
-    convo=[];canvas.innerHTML='';
+    convo=[];pending=[];renderChips();canvas.innerHTML='';
     intro=document.createElement('div');intro.className='intro';
     intro.innerHTML='Nieuw gesprek. Waarmee kan ik je helpen?';
     canvas.appendChild(intro);input.focus();
   });
 
+  /* ---------- versturen ---------- */
   form.addEventListener('submit',async function(e){
-    e.preventDefault();var text=input.value.trim();if(!text)return;
-    var target=addEntry(text);
-    convo.push({role:'user',content:text});
-    input.value='';input.style.height='auto';setBusy(true);
+    e.preventDefault();
+    var text=input.value.trim();
+    var files=pending.slice();
+    if(!text && files.length===0) return;
+
+    var target=addEntry(text, files);
+
+    // Bouw de inhoud: bijlagen eerst, dan de tekst.
+    var content;
+    if(files.length){
+      content=[];
+      files.forEach(function(p){
+        if(p.kind==='image') content.push({type:'image',source:{type:'base64',media_type:p.media_type,data:p.data}});
+        else content.push({type:'document',source:{type:'base64',media_type:p.media_type,data:p.data}});
+      });
+      content.push({type:'text',text: text || 'Kijk hier eens naar en vertel wat je ziet.'});
+    }else{
+      content=text;
+    }
+    convo.push({role:'user',content:content});
+
+    // invoer + bijlagen leegmaken
+    input.value='';input.style.height='auto';pending=[];renderChips();
+    setBusy(true);
 
     try{
       var r=await fetch('/api/chat',{method:'POST',
@@ -243,9 +386,9 @@
       var data=await r.json();setBusy(false);
       if(data && data.reply){
         target.textContent=data.reply;
+        addSources(target, data.sources);
         convo.push({role:'assistant',content:data.reply});
       } else {
-        // Toon de echte serverfout in beeld, zodat we niet meer hoeven te gissen.
         target.classList.add('err');
         target.textContent='Fout van de server: '+((data&&data.error)?data.error:('onbekend (status '+r.status+')'));
       }
