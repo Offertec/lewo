@@ -5,8 +5,9 @@
 //   body    { probe: true }                          -> alleen code controleren
 //   body    { messages: [{role, content}, ...] }     -> vraag stellen aan Claude
 //
-// Deze versie heeft internet-toegang (web search) aan en geeft ook de
-// gebruikte bronnen terug, zodat de pagina ze als links kan tonen.
+// De 'content' van een bericht mag tekst zijn, of een lijst blokken
+// (tekst + foto's + PDF's). Web search staat aan; gebruikte bronnen worden
+// mee teruggegeven.
 
 // ---- Lewo's karakter. Pas deze tekst gerust aan naar jouw smaak. ----
 const LEWO_SYSTEM = [
@@ -14,8 +15,9 @@ const LEWO_SYSTEM = [
   "Praat Nederlands, natuurlijk en menselijk, alsof je een scherpe, behulpzame vriend bent.",
   "Wees kort en direct. Kom meteen ter zake. Geen inleidende plichtplegingen, geen onnodige disclaimers, geen samenvatting achteraf.",
   "Schrijf in gewone, nette tekst. Gebruik GEEN opmaaktekens: geen sterretjes voor vet, geen hekjes voor titels, geen streepjes of nummers als opsomming. Als je toch iets moet opsommen, doe het in vloeiende zinnen of op korte losse regels zonder tekens ervoor.",
+  "Je kunt foto's en PDF-bestanden bekijken die de gebruiker meestuurt, en er vragen over beantwoorden.",
   "Je kunt op het web zoeken naar actuele informatie (zoals weer, nieuws, prijzen of adressen). Doe dat gewoon wanneer het nuttig is, zonder te melden dat je gaat zoeken, en geef daarna gewoon het antwoord. Noem de bronnen niet zelf in je tekst; die worden apart onder je antwoord getoond.",
-  "Wat je NIET kunt: je hebt geen toegang tot Sven's persoonlijke apps zoals zijn agenda, e-mail of bestanden. Je kunt daar niets in aanklikken, opslaan of inzetten. Als iemand daarom vraagt, zeg kort dat je de tekst kant-en-klaar kunt opstellen, maar dat Sven de actie zelf moet doen.",
+  "Wat je NIET kunt: je hebt geen toegang tot Sven's persoonlijke apps zoals zijn agenda, e-mail of bestanden op zijn computer. Je kunt daar niets in aanklikken, opslaan of inzetten. Als iemand daarom vraagt, zeg kort dat je de tekst kant-en-klaar kunt opstellen, maar dat Sven de actie zelf moet doen.",
   "Wees eerlijk. Als je iets niet zeker weet of niet kunt, zeg dat één keer in één zin en ga verder met wat je wél kunt bieden. Ga niet in de les.",
   "Denk mee, wees concreet, en pas je toon aan de vraag aan.",
 ].join(" ");
@@ -41,7 +43,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  // 3) Body inlezen (soms komt die binnen als tekst i.p.v. object)
+  // 3) Body inlezen
   let body = req.body;
   if (typeof body === "string") {
     try {
@@ -52,7 +54,7 @@ export default async function handler(req, res) {
   }
   body = body || {};
 
-  // 4) Probe: enkel bevestigen dat de code klopt, zonder Claude te bellen
+  // 4) Probe
   if (body.probe === true) {
     res.status(200).json({ ok: true });
     return;
@@ -74,7 +76,7 @@ export default async function handler(req, res) {
     return;
   }
 
-  // 7) Claude bellen (met web search ingeschakeld)
+  // 7) Claude bellen
   try {
     const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
@@ -84,7 +86,9 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5",
+        // Wil je terug naar de goedkopere (nog steeds sterke) versie?
+        // Vervang "claude-opus-4-8" door "claude-sonnet-5".
+        model: "claude-opus-4-8",
         max_tokens: 1500,
         system: LEWO_SYSTEM,
         messages: messages,
@@ -92,7 +96,6 @@ export default async function handler(req, res) {
           {
             type: "web_search_20250305",
             name: "web_search",
-            // max_uses beschermt je tegoed: hoogstens 3 zoekopdrachten per vraag.
             max_uses: 3,
           },
         ],
@@ -110,7 +113,7 @@ export default async function handler(req, res) {
       return;
     }
 
-    // Alle tekstblokken samenvoegen tot het volledige antwoord.
+    // Tekst + bronnen verzamelen
     let reply = "";
     const sources = [];
     const seen = new Set();
@@ -119,7 +122,6 @@ export default async function handler(req, res) {
       for (const block of data.content) {
         if (!block) continue;
 
-        // Tekst + eventuele bronvermeldingen (citations)
         if (block.type === "text") {
           if (block.text) reply += block.text;
           if (Array.isArray(block.citations)) {
@@ -132,7 +134,6 @@ export default async function handler(req, res) {
           }
         }
 
-        // Fallback: de ruwe zoekresultaten, mocht er geen citation zijn
         if (block.type === "web_search_tool_result" && Array.isArray(block.content)) {
           for (const r of block.content) {
             if (r && r.url && !seen.has(r.url)) {
@@ -149,7 +150,6 @@ export default async function handler(req, res) {
       reply = "Ik kreeg hier geen tekstantwoord op. Probeer je vraag anders te stellen.";
     }
 
-    // Hoogstens 6 bronnen tonen, om het net te houden.
     res.status(200).json({ reply, sources: sources.slice(0, 6) });
   } catch (err) {
     res.status(500).json({
