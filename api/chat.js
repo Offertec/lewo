@@ -1,60 +1,78 @@
-// api/chat.js — de veilige achterkant van Lewo
-//
-// Twee geheimen staan als omgevingsvariabelen in Vercel (nooit in dit bestand):
-//   ANTHROPIC_API_KEY   -> jouw Claude-API-sleutel (sk-ant-...)
-//   LEWO_ACCESS_CODES   -> toegangscodes, gescheiden door komma's
-//                          bv:  lente-2026,marie7,team-sven
-// Iedereen aan wie jij zo'n code geeft, kan chatten. Een code weghalen =
-// die persoon buitensluiten (env-variabele aanpassen en opnieuw deployen).
+// Lewo — api/chat.js
+// Vercel serverless functie. Praat veilig met de Anthropic API.
+// Verwacht een POST met:
+//   header  x-lewo-code: <toegangscode>
+//   body    { probe: true }                          -> alleen code controleren
+//   body    { messages: [{role, content}, ...] }     -> vraag stellen aan Claude
 
-module.exports = async function handler(req, res) {
+// ---- Lewo's karakter. Pas deze tekst gerust aan naar jouw smaak. ----
+const LEWO_SYSTEM = [
+  "Je bent Lewo, de persoonlijke AI van Sven.",
+  "Praat Nederlands, natuurlijk en menselijk, alsof je een scherpe, behulpzame vriend bent.",
+  "Wees kort en direct. Kom meteen ter zake. Geen inleidende plichtplegingen, geen onnodige disclaimers, geen samenvatting achteraf.",
+  "Schrijf in gewone, nette tekst. Gebruik GEEN opmaaktekens: geen sterretjes voor vet, geen hekjes voor titels, geen streepjes of nummers als opsomming. Als je toch iets moet opsommen, doe het in vloeiende zinnen of op korte losse regels zonder tekens ervoor.",
+  "Wees eerlijk. Als je iets niet kunt, zeg dat één keer in één zin en ga verder met wat je wél kunt bieden. Ga niet in de les.",
+  "Je kunt alleen tekst schrijven in dit gesprek. Je hebt geen toegang tot agenda's, e-mail, bestanden of andere apps en kunt dus niets aanklikken, opslaan of ergens inzetten. Als iemand daarom vraagt, zeg kort dat je de tekst kant-en-klaar kunt opstellen, maar dat Sven de actie zelf moet doen.",
+  "Denk mee, wees concreet, en pas je toon aan de vraag aan.",
+].join(" ");
+
+export default async function handler(req, res) {
+  // 1) Alleen POST toestaan
   if (req.method !== "POST") {
-    res.status(405).json({ error: "Alleen POST is toegestaan." });
+    res.status(405).json({ error: "Alleen POST toegestaan." });
     return;
   }
 
-  // ---- 1. Toegangscontrole (server-side, niet te omzeilen) ----
-  const allowed = (process.env.LEWO_ACCESS_CODES || "")
-    .split(",").map((s) => s.trim()).filter(Boolean);
+  // 2) Toegangscode controleren
+  const rawCodes = process.env.LEWO_ACCESS_CODES || "";
+  const validCodes = rawCodes
+    .split(",")
+    .map((c) => c.trim())
+    .filter((c) => c.length > 0);
 
-  if (allowed.length === 0) {
-    res.status(500).json({ error: "Nog geen toegangscodes ingesteld (LEWO_ACCESS_CODES)." });
+  const sentCode = (req.headers["x-lewo-code"] || "").toString().trim();
+
+  if (!sentCode || !validCodes.includes(sentCode)) {
+    res.status(401).json({ error: "Toegangscode ongeldig." });
     return;
   }
 
-  const code = (req.headers["x-lewo-code"] || req.body?.code || "").toString().trim();
-  if (!allowed.includes(code)) {
-    res.status(401).json({ error: "Onjuiste of ontbrekende toegangscode." });
-    return;
+  // 3) Body inlezen (soms komt die binnen als tekst i.p.v. object)
+  let body = req.body;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch {
+      body = {};
+    }
   }
+  body = body || {};
 
-  // Lichte controle-aanvraag vanaf het toegangsscherm: code is geldig, maar
-  // we praten (nog) niet met Claude, zodat een geldige code niets kost.
-  if (req.body?.probe === true) {
+  // 4) Probe: enkel bevestigen dat de code klopt, zonder Claude te bellen
+  if (body.probe === true) {
     res.status(200).json({ ok: true });
     return;
   }
 
-  // ---- 2. Praten met Claude ----
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) {
-    res.status(500).json({ error: "Serversleutel ontbreekt (ANTHROPIC_API_KEY niet ingesteld)." });
+  // 5) Vraag ophalen
+  const messages = Array.isArray(body.messages) ? body.messages : null;
+  if (!messages || messages.length === 0) {
+    res.status(400).json({ error: "Geen bericht ontvangen." });
     return;
   }
 
-  // ====== PAS DIT AAN: wie is Lewo? ======
-  const SYSTEM_PROMPT =
-    "Je bent Lewo, de persoonlijke AI-assistent van Sven. Je bent behulpzaam, " +
-    "vriendelijk, eerlijk en to-the-point. Je praat standaard Nederlands, maar " +
-    "schakelt mee met de taal van de gebruiker. Je helpt met zowat alles: " +
-    "vragen beantwoorden, teksten schrijven, brainstormen, uitleggen, nakijken. " +
-    "Weet je iets niet zeker, zeg dat dan eerlijk in plaats van te gokken.";
-  // =======================================
+  // 6) API-sleutel controleren
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  if (!apiKey) {
+    res
+      .status(500)
+      .json({ error: "Serverfout: ANTHROPIC_API_KEY ontbreekt in Vercel." });
+    return;
+  }
 
+  // 7) Claude bellen
   try {
-    const messages = Array.isArray(req.body?.messages) ? req.body.messages : [];
-
-    const upstream = await fetch("https://api.anthropic.com/v1/messages", {
+    const anthropicRes = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
         "content-type": "application/json",
@@ -62,28 +80,35 @@ module.exports = async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        model: "claude-sonnet-5", // slim gesprek; wissel voor "claude-haiku-4-5" = goedkoper/sneller
-        max_tokens: 1024,
-        system: SYSTEM_PROMPT,
+        model: "claude-sonnet-5",
+        max_tokens: 1200,
+        system: LEWO_SYSTEM,
         messages: messages,
       }),
     });
 
-    if (!upstream.ok) {
-      const detail = await upstream.text();
-      res.status(502).json({ error: "Fout bij Claude.", detail });
+    const data = await anthropicRes.json();
+
+    if (!anthropicRes.ok) {
+      const msg =
+        data && data.error && data.error.message
+          ? data.error.message
+          : "Onbekende fout van Anthropic.";
+      res.status(anthropicRes.status).json({ error: msg });
       return;
     }
 
-    const data = await upstream.json();
-    const reply = (data.content || [])
-      .filter((b) => b.type === "text")
-      .map((b) => b.text)
-      .join("\n")
-      .trim();
+    const reply =
+      data.content && data.content[0] && data.content[0].text
+        ? data.content[0].text
+        : "";
 
-    res.status(200).json({ reply: reply || "..." });
+    res.status(200).json({ reply });
   } catch (err) {
-    res.status(500).json({ error: "Onverwachte fout.", detail: String(err) });
+    res.status(500).json({
+      error:
+        "Serverfout bij het bellen van Claude: " +
+        (err && err.message ? err.message : String(err)),
+    });
   }
-};
+}
