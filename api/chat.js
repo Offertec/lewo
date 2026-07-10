@@ -86,9 +86,9 @@ export default async function handler(req, res) {
         "anthropic-version": "2023-06-01",
       },
       body: JSON.stringify({
-        // Wil je terug naar de goedkopere (nog steeds sterke) versie?
-        // Vervang "claude-opus-4-8" door "claude-sonnet-5".
-        model: "claude-opus-4-8",
+        // Snel en slim. Wil je later het krachtigste (maar tragere) model?
+        // Vervang "claude-sonnet-5" door "claude-opus-4-8".
+        model: "claude-sonnet-5",
         max_tokens: 1500,
         system: LEWO_SYSTEM,
         messages: messages,
